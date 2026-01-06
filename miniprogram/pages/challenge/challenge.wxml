@@ -1,0 +1,109 @@
+<view class="{{themeClass}} game-root" catchtouchmove="noop" style="{{themeStyle}}">
+  <block wx:for="{{themeLayers}}" wx:key="node" wx:for-item="layer">
+    <view class="{{layer.node}}" wx:if="{{layer.enabled}}"></view>
+  </block>
+  <view class="page-width">
+  <view class="hud">
+    <view class="icon-btn" bindtap="goHome">🏠</view>
+    <view class="score-badge">{{movesLeft!==null? movesLeft : '∞'}}</view>
+    <view class="goal-grid">
+      <view class="g"></view><view class="g"></view><view class="g"></view>
+    </view>
+    <view class="streak-badge" wx:if="{{goalProgress>0}}">{{goalProgress}}/3</view>
+    <view class="undo-btn" bindtap="undoLast">回退</view>
+  </view>
+
+  <view class="task-panel">
+    <view class="task-header">挑战：{{challenge? challenge.name : ''}}</view>
+    <view class="task-section">目标</view>
+    <view class="task-list">
+      <block wx:for="{{tasksView}}" wx:key="t">
+        <view class="task-item {{item.done? 'done' : ''}}">
+          <text class="task-label">{{item.label}}</text>
+          <text class="task-progress">{{item.progress}}</text>
+        </view>
+      </block>
+    </view>
+    <view class="task-section">限制</view>
+    <view class="task-list">
+      <block wx:for="{{restrictionsView}}" wx:key="r">
+        <view class="task-item">
+          <text class="task-label">{{item.label}}</text>
+          <text class="task-progress">{{item.value}}</text>
+        </view>
+      </block>
+    </view>
+  </view>
+
+  <view class="board-area">
+    <view class="axis-top" wx:if="{{showAxis}}">
+      <view class="axis-top-cell axis-blank">空</view>
+      <block wx:for="{{axisLetters}}" wx:key="l">
+        <view class="axis-top-cell">{{item}}</view>
+      </block>
+    </view>
+    <view class="content-row">
+      <view class="axis-left" wx:if="{{showAxis}}">
+        <block wx:for="{{axisNumbers}}" wx:key="n">
+          <view class="axis-left-cell">{{item}}</view>
+        </block>
+      </view>
+      <view class="board" id="board" catchtouchstart="noop" catchtouchmove="noop" catchtouchend="noop">
+        <block wx:for="{{boxCoords}}" wx:key="box">
+          <view class="box-bg {{(item[0]+item[1])%2===0 ? 'even' : 'odd'}}" style="left:{{item[0]*3*cellPx}}px;top:{{item[1]*3*cellPx}}px;width:{{3*cellPx}}px;height:{{3*cellPx}}px;"></view>
+        </block>
+        <view class="line-v" style="left:{{3*cellPx}}px;"></view>
+        <view class="line-v" style="left:{{6*cellPx}}px;"></view>
+        <view class="line-h" style="top:{{3*cellPx}}px;"></view>
+        <view class="line-h" style="top:{{6*cellPx}}px;"></view>
+        <view class="cells-layer">
+          <block wx:for="{{grid}}" wx:key="row" wx:for-index="rowIndex">
+            <view class="row">
+              <block wx:for="{{item}}" wx:key="col" wx:for-index="colIndex" wx:for-item="cell">
+                <view class="cell {{cell.state}} {{cell.anchored? 'anchored' : ''}}"></view>
+              </block>
+            </view>
+          </block>
+        </view>
+        <view class="drag-shadow" wx:if="{{dragging}}" style="left:{{drag.shadowLeft}}px;top:{{drag.shadowTop}}px;">
+          <block wx:for="{{drag.cells}}" wx:key="c">
+            <view class="cell filled" style="left:{{item[0]*cellPx}}px;top:{{item[1]*cellPx}}px;background: {{drag.color||'var(--cell-filled)'}};"></view>
+          </block>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="tray">
+    <block wx:for="{{pieces}}" wx:key="id" wx:for-item="piece" wx:for-index="pieceIndex">
+      <view class="piece {{piece.power? 'power-' + piece.power : ''}}" data-index="{{pieceIndex}}" bindtouchstart="onPieceStart" catchtouchmove="onPieceMove" bindtouchend="onPieceEnd">
+        <view class="power-badge" wx:if="{{piece.power}}">
+          <text wx:if="{{piece.power==='nuke'}}">炸</text>
+          <text wx:elif="{{piece.power==='converter'}}">转</text>
+          <text wx:else>锚</text>
+        </view>
+        <block wx:for="{{piece.cells}}" wx:key="c" wx:for-item="cell">
+          <view class="mini-cell" style="left:{{cell[0]*miniPx}}px;top:{{cell[1]*miniPx}}px;background: {{piece.color||'var(--cell-filled)'}};"></view>
+        </block>
+      </view>
+    </block>
+  </view>
+  <view class="debug-panel">
+    <view class="debug-actions">
+      <view class="export-btn" bindtap="exportLogs">导出日志</view>
+      <view class="export-btn" bindtap="exportBoard">导出棋盘</view>
+    </view>
+    <scroll-view scroll-y="true" class="log-list">
+      <block wx:for="{{logsView}}" wx:key="ts">
+        <view class="log-item">
+          <text class="log-title">{{item.step}}. {{item.type}} {{axisLetters[item.gx]}}{{item.gy+1}} {{item.power}}</text>
+          <text class="log-meta">清除 R{{item.clears.rows}} C{{item.clears.cols}} B{{item.clears.boxes}} · 步 {{item.postMoves}}</text>
+        </view>
+      </block>
+    </scroll-view>
+  </view>
+  </view>
+  <view class="combo-text-overlay" wx:if="{{comboShow}}">
+    <view class="combo-text">{{comboBanner}}</view>
+  </view>
+</view>

@@ -1,0 +1,24 @@
+<view class="container theme-wood">
+  <view class="page-width">
+    <view class="title-area">
+      <text class="title">BlockZen</text>
+      <text class="subtitle">禅意方块</text>
+    </view>
+    
+    <view class="menu">
+      <view class="menu-btn primary" bindtap="goClassic">
+        <text class="btn-title">经典模式</text>
+        <text class="btn-desc">无尽消除，挑战高分</text>
+      </view>
+      
+      <view class="menu-btn secondary" bindtap="goChallenge">
+        <text class="btn-title">挑战模式</text>
+        <text class="btn-desc">策略解谜，步步为营</text>
+      </view>
+    </view>
+
+    <view class="footer">
+      <text class="version">v1.0.0</text>
+    </view>
+  </view>
+</view>

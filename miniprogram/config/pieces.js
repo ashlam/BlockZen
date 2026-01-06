@@ -1,0 +1,26 @@
+const PIECES_CFG = [
+  { id: 1, name: 'line-horizon-4', color: '#4a6fae', shape: [[1,1,1,1]], remark: '4格直线' },
+  { id: 2, name: 'hook-right', color: '#6aa36a', shape: [[1,0,0],[1,1,1]], remark: '右勾形' },
+  { id: 3, name: 'hook-left', color: '#b78a69', shape: [[0,0,1],[1,1,1]], remark: '左勾形' },
+  { id: 4, name: 'square2', color: '#8d6b51', shape: [[1,1],[1,1]], remark: '2x2方块' },
+  { id: 5, name: 'zig-a', color: '#c44', shape: [[0,1,1],[1,1,0]], remark: 'Z形A' },
+  { id: 6, name: 'zig-b', color: '#e67', shape: [[1,1,0],[0,1,1]], remark: 'Z形B' },
+  { id: 7, name: 'long-t', color: '#5a7a3e', shape: [[1,1,1],[0,1,0],[0,1,0]], remark: 'T形' },
+  { id: 8, name: 'arch', color: '#a86', shape: [[1,0,1],[1,1,1]], remark: '拱形' },
+  { id: 9, name: 'el', color: '#7a6', shape: [[1,1,1],[1,0,0],[1,0,0]], remark: 'L形' },
+  { id: 10, name: 'plus', color: '#3a7', shape: [[0,1,0],[1,1,1],[0,1,0]], remark: '十字形' },
+  { id: 11, name: 'line5', color: '#2a9', shape: [[1,1,1,1,1]], remark: '5格横线' },
+  { id: 12, name: 'dot-dot', color: '#5d1', shape: [[1,0],[0,1]], remark: '点点' },
+  { id: 13, name: 'dot-dot-2', color: '#a0b', shape: [[0,1],[1,0]], remark: '点点2' },
+  { id: 14, name: 'line-horizon-3', color: '#e1d', shape: [[1,1,1]], remark: '三格横线' },
+  { id: 15, name: 'line-vertical-3', color: 'rgba(29, 64, 168, 0.44)', shape: [[1],[1],[1]], remark: '三格竖线' },
+  { id: 16, name: 'line-vertical-4', color: 'rgba(237, 247, 53, 1)', shape: [[1],[1],[1],[1]], remark: '四格竖线' },
+  { id: 17, name: 'line-vertical-5', color: 'rgba(220, 137, 42, 1)', shape: [[1],[1],[1],[1],[1]], remark: '五格竖线' },
+  { id: 18, name: 'short-t', color: 'rgba(255, 128, 0, 1)', shape: [[1, 1, 1],[0, 1, 0]], remark: '短T形' },
+  { id: 19, name: 'short-t-reverse', color: 'rgba(255, 165, 0, 1)', shape: [[0, 1, 0],[1, 1, 1]], remark: '反短T形' },
+  { id: 20, name: 'long-t-reverse', color: 'rgba(255, 215, 0, 1)', shape: [[0, 1, 0],[0, 1, 0],[1, 1, 1]], remark: '反长T形' },
+  { id: 21, name: 'cornor-a', color: 'rgba(255, 255, 0, 1)', shape: [[1, 1],[1, 0]], remark: '一角形A' },
+  { id: 22, name: 'cornor-b', color: 'rgba(255, 0, 255, 1)', shape: [[1, 1],[0, 1]], remark: '一角形B' },
+];
+
+module.exports = { PIECES_CFG };
