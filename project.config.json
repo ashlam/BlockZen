@@ -16,7 +16,12 @@
   "compileType": "game",
   "simulatorPluginLibVersion": {},
   "packOptions": {
-    "ignore": [],
+    "ignore": [
+      { "type": "glob", "value": "miniprogram/**/*.wxss" },
+      { "type": "glob", "value": "miniprogram/**/*.wxml" },
+      { "type": "glob", "value": "miniprogram/app.wxss" },
+      { "type": "glob", "value": "miniprogram/pages/**" }
+    ],
     "include": []
   },
   "isGameTourist": false,
