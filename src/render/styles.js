@@ -1,6 +1,15 @@
+/**
+ * 样式绘制辅助
+ * - drawThemedButton: 绘制主题按钮（填充+描边）
+ * - drawWrappedText: 简单自动换行文本
+ * - drawBoardThumbnail: 绘制棋盘缩略图，可选择高亮行/列/3x3区域
+ */
 const { accentColor } = require('../utils/theme');
 const shared = require('../shared');
 
+/**
+ * 绘制主题按钮
+ */
 function drawThemedButton(ctx, x, y, w, h, alpha) {
   ctx.save();
   ctx.globalAlpha = alpha == null ? 0.85 : alpha;
@@ -15,6 +24,10 @@ function drawThemedButton(ctx, x, y, w, h, alpha) {
   ctx.restore();
 }
 
+/**
+ * 自动换行绘制文本
+ * @returns {number} 末行绘制后的 y 值
+ */
 function drawWrappedText(ctx, text, x, y, maxWidth, lineHeight) {
   let line = '';
   for (let i = 0; i < text.length; i++) {
@@ -35,6 +48,9 @@ function drawWrappedText(ctx, text, x, y, maxWidth, lineHeight) {
   return y;
 }
 
+/**
+ * 绘制棋盘缩略图，支持高亮
+ */
 function drawBoardThumbnail(ctx, x, y, size, highlight) {
   const cell = size / 9;
   const vars = shared.vars;

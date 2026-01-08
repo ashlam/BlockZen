@@ -1,4 +1,4 @@
-# 挑战模式配置与实现说明（V1）
+# 挑战模式配置与实现说明（V2）
 
 ## 配置表
 - 文件：`miniprogram/config/challenges.js`
@@ -95,6 +95,7 @@
 - 默认权重：`DEFAULT_WEIGHTS`，对所有 `piece.id` 赋值（示例为 100）
 - 关卡权重覆盖：在 `LEVEL_CONFIG[levelId].weights` 中针对某些 `piece.id` 赋值（0 表示禁用；数值越大概率越高）
 - 关联：在关卡配置 `levelId` 绑定到对应权重集；页面初始化时 `rng.initLevel(levelId)` 应用该权重
+ - 运行时调用：挑战开始时 `rngManager.initLevel(ch.levelId)`，随后 `GameLogic.nextPieces()` 按权重生成三枚零件
 
 ## 示例：新增一个关卡（从 0 到 1）
 ```
@@ -136,6 +137,7 @@ LEVEL_CONFIG[3] = {
 - 修改目标：调整 `tasks` 中的 `target` 数值或增加/删除条目
 - 修改限制：在 `restrictions` 中添加或移除对应项
 - 修改概率：在 `levels.js` 的权重中调整各 `piece.id` 的数值或设置为 0 禁用
+ - 扩展判定：如需新增任务或限制类型，分别扩展 `GameManager.checkTasksComplete` 与 `GameManager.afterStepFinalize`/`onPlace` 中对应逻辑
 
 ## 验证建议
 - 进入页面后观察 HUD 的步数、分数与“步内连击弹出”是否符合预期

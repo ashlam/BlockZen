@@ -1,3 +1,7 @@
+/**
+ * Renderer
+ * 渲染器：负责布局计算与所有 Canvas 绘制，包含棋盘、托盘、HUD、特效与各子界面调用。
+ */
 const databus = require('../databus');
 const shared = require('../shared');
 const { accentColor, accentRGBA, parseColorToRGB } = require('../utils/theme');
@@ -10,10 +14,16 @@ class Renderer {
     this.ctx = null;
   }
 
+  /**
+   * 初始化绘图上下文
+   */
   init(ctx) {
     this.ctx = ctx;
   }
 
+  /**
+   * 计算布局：棋盘、托盘、道具栏与取消区
+   */
   layout() {
     const sw = shared.sw;
     const sh = shared.sh;
@@ -51,6 +61,9 @@ class Renderer {
     databus.state.cancelZone = { x: zoneX, y: zoneY, w: zoneW, h: zoneH };
   }
 
+  /**
+   * 主渲染入口：按场景绘制
+   */
   render() {
     const ctx = this.ctx;
     const sw = shared.sw;
@@ -108,6 +121,9 @@ class Renderer {
     this.drawClearFlash();
   }
 
+  /**
+   * 绘制棋盘与已填充格
+   */
   drawBoard() {
     const ctx = this.ctx;
     const b = databus.state.board;
@@ -138,6 +154,9 @@ class Renderer {
     }
   }
 
+  /**
+   * 绘制托盘中的零件缩略图与槽位
+   */
   drawTray() {
     const ctx = this.ctx;
     const vars = shared.vars;
@@ -163,6 +182,9 @@ class Renderer {
     }
   }
 
+  /**
+   * 绘制 HUD：挑战目标或分数/金币
+   */
   drawHUD() {
     const ctx = this.ctx;
     const sw = shared.sw;
@@ -196,6 +218,9 @@ class Renderer {
     }
   }
 
+  /**
+   * 绘制拖拽预览与高亮托盘槽
+   */
   drawDrag() {
     if (!databus.state.dragging) return;
     const ctx = this.ctx;
@@ -218,6 +243,9 @@ class Renderer {
     }
   }
 
+  /**
+   * 绘制连击提示弹框与环形特效
+   */
   drawCombo() {
     if (!databus.state.comboShow) return;
     const elapsed = Date.now() - databus.state.comboTs;
@@ -254,6 +282,9 @@ class Renderer {
     ctx.restore();
   }
 
+  /**
+   * 绘制返回按钮
+   */
   drawBack() {
     const w = 68, h = 32;
     const x = 12, y = shared.safeTop + 56;
@@ -268,6 +299,9 @@ class Renderer {
     ctx.fillText(t, x + (w - tw) / 2, y + 22);
   }
 
+  /**
+   * 绘制取消区
+   */
   drawCancelZone() {
     if (!databus.state.cancelZone) return;
     const r = databus.state.cancelZone;
@@ -286,6 +320,9 @@ class Renderer {
     ctx.restore();
   }
 
+  /**
+   * 绘制扫描条特效
+   */
   drawScan() {
     if (!databus.state.scanActive) return;
     const elapsed = Date.now() - databus.state.scanTs;
@@ -304,6 +341,9 @@ class Renderer {
     ctx.fillRect(0, y, sw, 120);
   }
 
+  /**
+   * 绘制失败红屏提示
+   */
   drawFailHint() {
     if (!databus.state.failHintActive) return;
     const elapsed = Date.now() - databus.state.failHintTs;
@@ -318,6 +358,9 @@ class Renderer {
     ctx.restore();
   }
 
+  /**
+   * 绘制清除动画（缩放淡出）
+   */
   drawClearing() {
     if (!databus.state.clearing || !databus.state.clearing.cells || databus.state.clearing.cells.length === 0) return;
     const elapsed = Date.now() - databus.state.clearing.ts;
@@ -341,6 +384,9 @@ class Renderer {
     ctx.restore();
   }
 
+  /**
+   * 绘制清除碎片特效
+   */
   drawClearFX() {
     const fx = databus.state.clearFX;
     if (!fx || !fx.parts || fx.parts.length === 0) return;
@@ -362,6 +408,9 @@ class Renderer {
     if (elapsed >= fx.duration) { databus.state.clearFX = { parts: [], ts: 0, duration: fx.duration }; }
   }
 
+  /**
+   * 绘制清除爆炸圆环特效
+   */
   drawClearBurst() {
     const cb = databus.state.clearBurst;
     if (!cb || !cb.ts) return;
@@ -386,6 +435,9 @@ class Renderer {
     if (elapsed >= cb.duration) { databus.state.clearBurst = { cx: 0, cy: 0, ts: 0, duration: cb.duration }; }
   }
 
+  /**
+   * 绘制清除高亮覆盖（行/列/3x3）
+   */
   drawClearFlash() {
     const cf = databus.state.clearFlash;
     if (!cf || (!cf.rows.length && !cf.cols.length && !cf.boxes.length)) return;

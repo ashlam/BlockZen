@@ -1,3 +1,6 @@
+/**
+ * 通用辅助函数
+ */
 function formatTs(ts) {
   const d = new Date(ts || Date.now());
   const y = d.getFullYear();

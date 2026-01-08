@@ -1,3 +1,8 @@
+/**
+ * 道具栏绘制
+ * 显示当前各道具（旋转/骰子/换牌）的数量与本次使用价格。
+ * 价格读取自 ITEM_COST_CFG[type]，按已使用次数递增。
+ */
 const shared = require('../shared.js');
 const { ITEM_COST_CFG } = require('../../miniprogram/config/item_price.js');
 
@@ -6,6 +11,9 @@ function accentColor(){
   return v.accent || '#00e676';
 }
 
+/**
+ * 绘制道具栏
+ */
 function drawPowerBar(){
   const state = shared.state;
   const ctx = shared.ctx;
@@ -57,4 +65,3 @@ function drawPowerBar(){
 }
 
 module.exports = { drawPowerBar };
-

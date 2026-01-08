@@ -1,11 +1,30 @@
+/**
+ * DataBus
+ * 全局状态总线（单例），用于在渲染层、输入层、逻辑层之间共享游戏状态。
+ * 成员说明：
+ * - state.grid: 9x9 棋盘格状态矩阵
+ * - state.pieces: 托盘中的当前零件列表（最多3个）
+ * - state.score/coins: 当前分数与金币
+ * - state.comboT/comboChain: T 连击（跨步）、单步内连击累计
+ * - state.turnAreas/turnHadClear: 当前回合产生的消除区域数与是否有消除
+ * - state.scene: 当前界面（menu/game/history/settings/...）
+ * - state.ui: 界面开关（是否显示道具栏/取消区等）
+ * 其他字段见 reset() 初始化。
+ */
 const shared = require('./shared.js');
 
 class DataBus {
+  /**
+   * 构造函数，初始化状态
+   */
   constructor() {
     this.reset();
   }
 
   reset() {
+    /**
+     * 游戏全局状态对象
+     */
     this.state = {
       grid: [],
       score: 0,

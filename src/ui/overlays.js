@@ -1,3 +1,8 @@
+/**
+ * 道具弹窗绘制
+ * - 旋转：显示待旋转零件与按钮
+ * - 骰子：显示原零件与新零件的对比选择
+ */
 const shared = require('../shared.js');
 const { ITEM_BUY_CFG } = require('../../miniprogram/config/item_price.js');
 
@@ -6,6 +11,9 @@ function accentColor(){
   return v.accent || '#00e676';
 }
 
+/**
+ * 绘制零件预览
+ */
 function drawPiecePreview(p, bx, by, cell){
   const ctx = shared.ctx;
   const v = shared.vars || {};
@@ -17,6 +25,9 @@ function drawPiecePreview(p, bx, by, cell){
   }
 }
 
+/**
+ * 绘制道具弹窗
+ */
 function drawPowerOverlay(){
   const state = shared.state;
   const ctx = shared.ctx;
@@ -78,4 +89,3 @@ function drawPowerOverlay(){
 }
 
 module.exports = { drawPowerOverlay, drawPiecePreview };
-

@@ -1,4 +1,4 @@
-# 主题风格配置与使用说明（V1）
+# 主题风格配置与使用说明（V2）
 
 ## 文件与结构
 - 文件：`miniprogram/config/themes.js`
@@ -6,8 +6,8 @@
 ```
 {
   list: [
-    { id: 'classic', name: '经典', className: 'theme-wood', layers: [], effects: { refreshScan: false } },
-    { id: 'matrix', name: '黑客帝国', className: 'theme-matrix', layers: [{ node: 'matrix-bg', enabled: true }], effects: { refreshScan: true } }
+    { id: 'classic', name: '经典', className: 'theme-wood', layers: [], effects: { refreshScan: false }, variables: { boardBg: '#130d06', accent: '#ff9800' } },
+    { id: 'matrix', name: '黑客帝国', className: 'theme-matrix', layers: [{ node: 'matrix-bg', enabled: true }], effects: { refreshScan: true }, variables: { boardBg: '#001a0f', accent: '#00e676' } }
   ],
   currentId: 'matrix'
 }
@@ -19,6 +19,7 @@
 - `className`：注入到页面根视图的 CSS 类名（需在 `app.wxss` 中定义对应变量与样式）
 - `layers`：页面根部渲染的图层数组；每项 `node` 为类名，`enabled` 控制其是否显示（用于扩展各类背景/叠加层）
 - `effects`：主题关联的可视效果开关，如 `refreshScan`
+- `variables`：主题变量集合（颜色与样式数值），用于覆盖渲染层的视觉参数
 - `currentId`：当前主题的 id；页面初始化按该 id 选择主题
 
 ## 页面应用
@@ -74,3 +75,4 @@ THEMES.currentId = 'classic'
 
 ## 注意
 - 若主题背景需要额外层（如“代码雨”），在该主题的 `layers` 中追加一个 `{ node: 'your-bg-class', enabled: true }`，并在页面样式中定义该类
+- 变量注入：渲染层通过 `shared.vars` 读取主题变量，影响棋盘/格子/强调色绘制；详见 `src/utils/theme.js` 与 `src/render/Renderer.js`

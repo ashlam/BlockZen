@@ -1,3 +1,12 @@
+/**
+ * 配置聚合模块
+ * 统一从 miniprogram/config 下加载各类配置（记分、主题、零件、关卡、金币与道具价格）。
+ * 如果 item_price.js 加载失败，则使用内置默认值，保证道具模式可用。
+ *
+ * 用法：
+ * - 从此模块导入需要的配置对象，例如 { SCORE_CFG, THEMES, COIN_CFG, ITEM_COST_CFG }。
+ * - 经济相关配置字段的意义详见 miniprogram/config/item_price.js 顶部注释。
+ */
 const { SCORE_CFG } = require('../miniprogram/config/score');
 const { THEMES } = require('../miniprogram/config/themes');
 const { PIECES_CFG } = require('../miniprogram/config/pieces');

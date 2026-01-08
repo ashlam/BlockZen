@@ -1,3 +1,7 @@
+/**
+ * UIManager
+ * 负责菜单、关卡选择、历史记录、详细信息、设置、玩法说明等界面的绘制与资源加载。
+ */
 const databus = require('../databus');
 const shared = require('../shared');
 const { CHALLENGES, THEMES } = require('../config');
@@ -6,6 +10,9 @@ const { formatTs } = require('../utils/helpers');
 const styles = require('../render/styles');
 
 class UIManager {
+  /**
+   * 主菜单
+   */
   drawMenu(ctx) {
     const sw = shared.sw;
     const safeTop = shared.safeTop;
@@ -84,6 +91,9 @@ class UIManager {
     databus.state.menuButtons.push({ type:'settings', x: gx, y: gy, w: gw, h: gh });
   }
 
+  /**
+   * 关卡选择界面
+   */
   drawLevelSelect(ctx) {
     const sw = shared.sw;
     const safeTop = shared.safeTop;
@@ -119,6 +129,9 @@ class UIManager {
     }
   }
 
+  /**
+   * 历史记录列表
+   */
   drawHistory(ctx) {
     this.drawMenuBg(ctx);
     const sw = shared.sw;
@@ -188,6 +201,9 @@ class UIManager {
     }
   }
 
+  /**
+   * 历史记录详细信息
+   */
   drawHistoryDetail(ctx) {
     this.drawMenuBg(ctx);
     const sw = shared.sw;
@@ -216,6 +232,9 @@ class UIManager {
     ctx.fillText(`回合数：${rec ? rec.turns : 0}`, cardX + 12, cardY + 184);
   }
 
+  /**
+   * 设置界面（主题与移动方式）
+   */
   drawSettings(ctx) {
     databus.state.menuButtons = [];
     this.drawMenuBg(ctx);
@@ -264,6 +283,9 @@ class UIManager {
     databus.state.menuButtons.push({ type:'moveMode', id: 'relative', x: x + halfW + 12, y, w: halfW, h: btnH });
   }
 
+  /**
+   * 玩法说明界面
+   */
   drawHowto(ctx) {
     const sw = shared.sw;
     const safeTop = shared.safeTop;
@@ -289,6 +311,9 @@ class UIManager {
     y = styles.drawWrappedText(ctx, '提示：无解时会给出红色闪烁提示并结束当前局/挑战。', 24, y, sw - 48, 24);
   }
 
+  /**
+   * 菜单背景（图片或回退网格+剪影）
+   */
   drawMenuBg(ctx) {
     const sw = shared.sw;
     const sh = shared.sh;
@@ -332,6 +357,9 @@ class UIManager {
     }
   }
 
+  /**
+   * 异步加载菜单背景图片
+   */
   ensureMenuBg() {
      try{
         const img = wx.createImage ? wx.createImage() : new Image();

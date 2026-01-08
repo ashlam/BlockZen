@@ -1,3 +1,7 @@
+/**
+ * InputHandler
+ * 输入处理器：统一处理微信触摸事件，将交互分发到菜单、关卡、设置、历史记录、道具栏与游戏拖拽。
+ */
 const databus = require('../databus');
 const gameLogic = require('../logic/GameLogic');
 const gameManager = require('../logic/GameManager');
@@ -6,12 +10,18 @@ const { ITEM_BUY_CFG, ITEM_COST_CFG, CHALLENGES } = require('../config');
 const { applyTheme } = require('../utils/theme');
 
 class InputHandler {
+  /**
+   * 注册事件处理
+   */
   init() {
     wx.onTouchStart(this.onTouchStart.bind(this));
     wx.onTouchMove(this.onTouchMove.bind(this));
     wx.onTouchEnd(this.onTouchEnd.bind(this));
   }
 
+  /**
+   * 触摸开始：优先处理弹窗/菜单/子界面/道具栏，其次进入拖拽
+   */
   onTouchStart(e) {
     const t = e.changedTouches[0];
     const state = databus.state;
@@ -65,6 +75,9 @@ class InputHandler {
     this.handleTrayTouch(t);
   }
 
+  /**
+   * 触摸移动：拖拽过程中更新格坐标（相对/普通两种模式）
+   */
   onTouchMove(e) {
     const state = databus.state;
     if (!state.dragging) return;
@@ -105,6 +118,9 @@ class InputHandler {
     state.drag.gy = gy;
   }
 
+  /**
+   * 触摸结束：尝试放置；相对模式在取消区松手则取消拖拽
+   */
   onTouchEnd(e) {
     const state = databus.state;
     if (!state.dragging) return;
@@ -149,6 +165,9 @@ class InputHandler {
   }
 
   // Helper methods for touch handling
+  /**
+   * 处理道具弹窗点击
+   */
   handleOverlayTouch(t) {
     const state = databus.state;
     const ov = state.powerOverlay;
@@ -198,6 +217,9 @@ class InputHandler {
     }
   }
 
+  /**
+   * 处理菜单点击
+   */
   handleMenuTouch(t) {
     const state = databus.state;
     for (const b of state.menuButtons) {
@@ -262,6 +284,9 @@ class InputHandler {
     }
   }
 
+  /**
+   * 处理关卡选择点击
+   */
   handleLevelSelectTouch(t) {
     const state = databus.state;
     if (state.backButton) {
@@ -296,6 +321,9 @@ class InputHandler {
     }
   }
 
+  /**
+   * 处理设置界面点击（主题/移动方式/返回）
+   */
   handleSettingsTouch(t) {
     const state = databus.state;
     if (state.backButton) {
@@ -322,6 +350,9 @@ class InputHandler {
     }
   }
 
+  /**
+   * 处理历史记录界面点击（切换tab/清空/进入详情/返回）
+   */
   handleHistoryTouch(t) {
     const state = databus.state;
     if (state.backButton) {
@@ -357,6 +388,9 @@ class InputHandler {
     }
   }
 
+  /**
+   * 处理道具栏点击（使用/购买并使用）
+   */
   handlePowerBarTouch(t) {
     const state = databus.state;
     for (let i = 0; i < state.powerRects.length; i++) {
@@ -379,6 +413,9 @@ class InputHandler {
     return false;
   }
   
+  /**
+   * 执行使用道具的动作（旋转/骰子/换牌）
+   */
   usePowerItem(item, i, usage) {
     const state = databus.state;
     if (item.type === 'redraw') {
@@ -415,6 +452,9 @@ class InputHandler {
     }
   }
   
+  /**
+   * 购买并使用道具（金币不足给出提示）
+   */
   buyAndUsePowerItem(item, i, usage, priceUse) {
     const state = databus.state;
     if (state.coins < priceUse) {
@@ -460,6 +500,9 @@ class InputHandler {
     });
   }
 
+  /**
+   * 托盘点击进入拖拽或弹窗道具流程
+   */
   handleTrayTouch(t) {
     const state = databus.state;
     for (let i = 0; i < state.tray.rects.length; i++) {
