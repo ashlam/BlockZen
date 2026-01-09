@@ -45,6 +45,12 @@ function init() {
     const savedMode = wx.getStorageSync('moveMode');
     if (savedMode === 'relative' || savedMode === 'absolute') { databus.state.moveMode = savedMode; }
   } catch (e) {}
+  try {
+    const off = wx.getStorageSync('relativeOffsetCells');
+    if (off && typeof off.x === 'number' && typeof off.y === 'number') {
+      databus.state.relativeOffsetCells = off;
+    }
+  } catch (e) {}
 
   gameManager.loadHistory();
   

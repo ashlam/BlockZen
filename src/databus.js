@@ -89,7 +89,11 @@ class DataBus {
       coins: 0,
       coinScoreBucket: 0,
       powerUsageCount: { rotate: 0, dice: 0, redraw: 0 },
-      powerBuyBtn: null
+      powerBuyBtn: null,
+      undoPrev: null,
+      undoButton: null,
+      placeToken: 0,
+      relativeOffsetCells: { x: 0, y: -1 }
     };
 
     // Link state to shared for backward compatibility during refactor

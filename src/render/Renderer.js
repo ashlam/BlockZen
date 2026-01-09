@@ -29,9 +29,9 @@ class Renderer {
     const sh = shared.sh;
     const safeTop = shared.safeTop;
     const margin = 16;
-    const boardSize = Math.floor(Math.min(sw - margin * 2, sh * 0.72, sw * 0.8));
+    const boardSize = Math.floor(Math.min(sw - margin * 2, sh * 0.66, sw * 0.8));
     const boardLeft = Math.floor((sw - boardSize) / 2);
-    const boardTop = Math.floor(safeTop + 96);
+    const boardTop = Math.floor(safeTop + 140);
     databus.state.board = { left: boardLeft, top: boardTop, size: boardSize, cell: boardSize / 9 };
     const trayY = Math.floor(boardTop + boardSize + 36);
     const gap = 24;
@@ -48,7 +48,9 @@ class Renderer {
     const zoneX = 24;
     const barH = 76;
     const gap2 = 24;
-    const barY = trayY + pieceW + 12;
+    const cancelY = trayY + pieceW + 12;
+    databus.state.cancelZone = { x: zoneX, y: cancelY, w: zoneW, h: zoneH };
+    const barY = cancelY + zoneH + 12;
     const slotW = Math.floor((sw - 48 - gap2 * 2) / 3);
     const slotX = 24;
     databus.state.powerRects = [
@@ -56,9 +58,6 @@ class Renderer {
       { x: slotX + slotW + gap2, y: barY, w: slotW, h: barH },
       { x: slotX + slotW * 2 + gap2 * 2, y: barY, w: slotW, h: barH }
     ];
-    const minZoneY = barY + barH + 12;
-    const zoneY = Math.min(sh - zoneH - 12, Math.max(minZoneY, sh - zoneH - 12));
-    databus.state.cancelZone = { x: zoneX, y: zoneY, w: zoneW, h: zoneH };
   }
 
   /**
@@ -103,6 +102,8 @@ class Renderer {
     
     this.drawHUD();
     this.drawBack();
+    this.drawUndo();
+    this.drawDebug();
     this.drawBoard();
     this.drawDrag();
     this.drawClearing();
@@ -299,6 +300,33 @@ class Renderer {
     ctx.fillText(t, x + (w - tw) / 2, y + 22);
   }
 
+  drawUndo() {
+    const w = 68, h = 32;
+    const x = shared.sw - w - 12, y = shared.safeTop + 56;
+    databus.state.undoButton = { x, y, w, h };
+    const ctx = this.ctx;
+    ctx.fillStyle = 'rgba(255,255,255,0.9)';
+    ctx.fillRect(x, y, w, h);
+    ctx.fillStyle = '#000';
+    ctx.font = '16px sans-serif';
+    const t = '撤回';
+    const tw = ctx.measureText(t).width;
+    ctx.fillText(t, x + (w - tw) / 2, y + 22);
+  }
+
+  drawDebug() {
+    const w = 68, h = 32;
+    const x = shared.sw - w - 12, y = shared.safeTop + 96;
+    databus.state.debugButton = { x, y, w, h };
+    const ctx = this.ctx;
+    ctx.fillStyle = 'rgba(255,255,255,0.9)';
+    ctx.fillRect(x, y, w, h);
+    ctx.fillStyle = '#000';
+    ctx.font = '16px sans-serif';
+    const t = '调试';
+    const tw = ctx.measureText(t).width;
+    ctx.fillText(t, x + (w - tw) / 2, y + 22);
+  }
   /**
    * 绘制取消区
    */

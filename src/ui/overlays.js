@@ -83,6 +83,38 @@ function drawPowerOverlay(){
     ov.buttons.push({ type:'choose_original', x: left.x, y: left.y, w: left.w, h: left.h });
     ov.buttons.push({ type:'choose_new', x: right.x, y: right.y, w: right.w, h: right.h });
     ov.buttons.push({ type:'confirm', x: cx, y: cy, w: bw, h: bh });
+  } else if(ov.type==='debug_offset'){
+    const labelY = cardY + 60;
+    ctx.fillStyle = '#fff';
+    ctx.font = '18px sans-serif';
+    const text = `相对偏移  X: ${ov.debugX||0}   Y: ${ov.debugY||0}`;
+    const tw = ctx.measureText(text).width;
+    ctx.fillText(text, cardX + (cardW - tw)/2, labelY);
+    const bw = 80, bh = 40;
+    const space = 20;
+    const rowY1 = labelY + 40;
+    const rowY2 = rowY1 + bh + 20;
+    const centerX = cardX + cardW/2;
+    const xMinusX = centerX - bw - space, xPlusX = centerX + space;
+    const yMinusX = centerX - bw - space, yPlusX = centerX + space;
+    ctx.fillStyle = 'rgba(255,255,255,0.2)'; ctx.fillRect(xMinusX, rowY1, bw, bh); ctx.fillRect(xPlusX, rowY1, bw, bh);
+    ctx.fillRect(yMinusX, rowY2, bw, bh); ctx.fillRect(yPlusX, rowY2, bw, bh);
+    ctx.fillStyle = '#fff'; ctx.font = '18px sans-serif';
+    const t1='X-'; const t2='X+'; const t3='Y-'; const t4='Y+';
+    ctx.fillText(t1, xMinusX + (bw - ctx.measureText(t1).width)/2, rowY1 + 26);
+    ctx.fillText(t2, xPlusX + (bw - ctx.measureText(t2).width)/2, rowY1 + 26);
+    ctx.fillText(t3, yMinusX + (bw - ctx.measureText(t3).width)/2, rowY2 + 26);
+    ctx.fillText(t4, yPlusX + (bw - ctx.measureText(t4).width)/2, rowY2 + 26);
+    const cw = 160, ch = 44;
+    const cx = cardX + Math.floor((cardW - cw)/2), cy = cardY + cardH - ch - 20;
+    ctx.fillStyle = 'rgba(255,255,255,0.2)'; ctx.fillRect(cx, cy, cw, ch);
+    ctx.fillStyle = '#fff'; ctx.font = '20px sans-serif';
+    const ct = '应用'; const ctw = ctx.measureText(ct).width; ctx.fillText(ct, cx + (cw - ctw)/2, cy + 28);
+    ov.buttons.push({ type:'dx_minus', x: xMinusX, y: rowY1, w: bw, h: bh });
+    ov.buttons.push({ type:'dx_plus', x: xPlusX, y: rowY1, w: bw, h: bh });
+    ov.buttons.push({ type:'dy_minus', x: yMinusX, y: rowY2, w: bw, h: bh });
+    ov.buttons.push({ type:'dy_plus', x: yPlusX, y: rowY2, w: bw, h: bh });
+    ov.buttons.push({ type:'apply_offset', x: cx, y: cy, w: cw, h: ch });
   }
   ctx.restore();
   state.powerOverlay = ov;

@@ -10,6 +10,25 @@ const rngManager = require('../../miniprogram/utils/rng');
 
 class GameManager {
   
+  makeSnapshot() {
+    return {
+      grid: databus.state.grid.map(r => r.slice()),
+      pieces: databus.state.pieces.map(p => ({ ...p, cells: p.cells.map(c => c.slice()) })),
+      score: databus.state.score,
+      comboT: databus.state.comboT,
+      comboChain: databus.state.comboChain,
+      prevStepHadClear: databus.state.prevStepHadClear,
+      turnAreas: databus.state.turnAreas,
+      turnHadClear: databus.state.turnHadClear,
+      lastPlacementHadClear: databus.state.lastPlacementHadClear,
+      coins: databus.state.coins,
+      coinScoreBucket: databus.state.coinScoreBucket,
+      taskProgress: { ...databus.state.taskProgress },
+      movesLeft: databus.state.movesLeft,
+      rngState: rngManager.getState()
+    };
+  }
+
   /**
    * 初始化挑战关卡状态
    * @param {object} ch 关卡配置
@@ -60,9 +79,11 @@ class GameManager {
    * @returns {boolean} 是否成功放置
    */
   onPlace(piece, gx, gy, pieceIndex) {
+    const prev = this.makeSnapshot();
     // 1) 规则层判定：该零件在 (gx,gy) 是否可放置，并写入到棋盘临时网格
     const ok = gameLogic.tryPlace(piece, gx, gy);
     if (!ok) return false;
+    databus.state.undoPrev = prev;
     
     // 2) 从托盘移除该零件（确保后续“托盘是否为空”判断正确）
     if (typeof pieceIndex === 'number') {
@@ -91,8 +112,11 @@ class GameManager {
       this.initClearFX(res.cells);
       this.initClearBurst(res.cells);
       this.initClearFlash(res);
+      const token = (databus.state.placeToken || 0) + 1;
+      databus.state.placeToken = token;
       
       setTimeout(() => {
+        if (databus.state.placeToken !== token) return;
         const g2 = databus.state.grid.map(row => row.slice());
         for (const [x, y] of res.cells) { const c = g2[y][x]; g2[y][x] = { state: 'empty', anchored: c.anchored, symbol: '', box: c.box }; }
         databus.state.grid = g2;
@@ -169,6 +193,31 @@ class GameManager {
     return true;
   }
 
+  undoLast() {
+    const s = databus.state.undoPrev;
+    if (!s) return;
+    databus.state.grid = s.grid.map(r => r.slice());
+    databus.state.pieces = s.pieces.map(p => ({ ...p, cells: p.cells.map(c => c.slice()) }));
+    databus.state.score = s.score;
+    databus.state.comboT = s.comboT;
+    databus.state.comboChain = s.comboChain;
+    databus.state.prevStepHadClear = s.prevStepHadClear;
+    databus.state.turnAreas = s.turnAreas;
+    databus.state.turnHadClear = s.turnHadClear;
+    databus.state.lastPlacementHadClear = s.lastPlacementHadClear;
+    databus.state.coins = s.coins;
+    databus.state.coinScoreBucket = s.coinScoreBucket;
+    databus.state.taskProgress = { ...s.taskProgress };
+    databus.state.movesLeft = s.movesLeft;
+    databus.state.clearing = { cells: [], ts: 0 };
+    databus.state.clearFX = { parts: [], ts: 0, duration: 450 };
+    databus.state.clearBurst = { cx: 0, cy: 0, ts: 0, duration: 400 };
+    databus.state.clearFlash = { rows: [], cols: [], boxes: [], ts: 0, duration: 250 };
+    databus.state.comboShow = false;
+    databus.state.placeToken = (databus.state.placeToken || 0) + 1;
+    databus.state.undoPrev = null;
+    rngManager.restoreState(s.rngState);
+  }
   /**
    * 回合结束：刷新托盘、处理跨步连击加分与金币
    */

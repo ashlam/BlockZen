@@ -65,6 +65,25 @@ class InputHandler {
         return;
       }
     }
+    if (state.undoButton) {
+      const r = state.undoButton;
+      if (t.clientX >= r.x && t.clientX <= r.x + r.w && t.clientY >= r.y && t.clientY <= r.y + r.h) {
+        if (state.undoPrev) {
+          gameManager.undoLast();
+        } else {
+          wx.showToast && wx.showToast({ title: '已撤回一次，无法再次撤回', icon: 'none', duration: 1200 });
+        }
+        return;
+      }
+    }
+    if (state.debugButton) {
+      const r = state.debugButton;
+      if (t.clientX >= r.x && t.clientX <= r.x + r.w && t.clientY >= r.y && t.clientY <= r.y + r.h) {
+        const off = state.relativeOffsetCells || { x: 0, y: 0 };
+        state.powerOverlay = { visible: true, type: 'debug_offset', debugX: off.x || 0, debugY: off.y || 0, buttons: [] };
+        return;
+      }
+    }
 
     // 7. Power Bar (In Game)
     if (state.ui && state.ui.showPower && !state.dragging && !state.awaitPowerPiece) {
@@ -110,6 +129,10 @@ class InputHandler {
       const localY = t.clientY - b.top;
       gx = Math.round(localX / b.cell) - Math.floor(state.drag.w / 2);
       gy = Math.round(localY / b.cell) - Math.floor(state.drag.h / 2);
+    }
+    if (state.relativeOffsetCells) {
+      gx += state.relativeOffsetCells.x || 0;
+      gy += state.relativeOffsetCells.y || 0;
     }
     if (gx < 0) gx = 0; if (gy < 0) gy = 0;
     if (gx > 9 - state.drag.w) gx = 9 - state.drag.w;
@@ -180,6 +203,7 @@ class InputHandler {
             state.powerOverlay = ov;
             return;
           } else if (b.type === 'confirm') {
+            state.undoPrev = gameManager.makeSnapshot();
             const idx = ov.pieceIndex;
             state.pieces = state.pieces.map((q, qi) => qi === idx ? ov.tempPiece : q);
             state.powerOverlay = { visible: false, type: null, pieceIndex: null, tempPiece: null, diceNewPiece: null, choice: 'original', buttons: [] };
@@ -191,6 +215,7 @@ class InputHandler {
           if (b.type === 'choose_original') { ov.choice = 'original'; state.powerOverlay = ov; return; }
           if (b.type === 'choose_new') { ov.choice = 'new'; state.powerOverlay = ov; return; }
           if (b.type === 'confirm') {
+            state.undoPrev = gameManager.makeSnapshot();
             const idx = ov.pieceIndex;
             if (ov.choice === 'new') {
               const np = ov.diceNewPiece;
@@ -211,6 +236,18 @@ class InputHandler {
                if (idx >= 0) { state.powerBar[idx].count = (state.powerBar[idx].count || 0) + 1; }
              } else { wx.showToast && wx.showToast({ title: '金币不足', icon: 'none', duration: 1200 }); }
              return;
+          }
+        } else if (ov.type === 'debug_offset') {
+          if (b.type === 'dx_minus') { ov.debugX = (ov.debugX || 0) - 1; state.powerOverlay = ov; return; }
+          if (b.type === 'dx_plus') { ov.debugX = (ov.debugX || 0) + 1; state.powerOverlay = ov; return; }
+          if (b.type === 'dy_minus') { ov.debugY = (ov.debugY || 0) - 1; state.powerOverlay = ov; return; }
+          if (b.type === 'dy_plus') { ov.debugY = (ov.debugY || 0) + 1; state.powerOverlay = ov; return; }
+          if (b.type === 'apply_offset') {
+            state.relativeOffsetCells = { x: ov.debugX || 0, y: ov.debugY || 0 };
+            try { wx.setStorageSync('relativeOffsetCells', state.relativeOffsetCells); } catch(e) {}
+            state.powerOverlay = { visible:false, type:null, pieceIndex:null, tempPiece:null, diceNewPiece:null, choice:'original', buttons:[] };
+            wx.showToast && wx.showToast({ title: '偏移已应用', icon: 'none', duration: 1000 });
+            return;
           }
         }
       }
@@ -405,7 +442,7 @@ class InputHandler {
         if (cnt > 0) {
           this.usePowerItem(item, i, usage);
         } else {
-          this.buyAndUsePowerItem(item, i, usage, priceUse);
+          this.buyItemToInventory(item, i, usage, priceUse);
         }
         return true;
       }
@@ -426,6 +463,7 @@ class InputHandler {
         cancelText: '放弃',
         success: (res) => {
           if (res.confirm) {
+            state.undoPrev = gameManager.makeSnapshot();
             state.pieces = [];
             gameLogic.nextPieces();
             if (!gameLogic.anyPlacementPossible()) { gameManager.triggerFail(); }
@@ -501,6 +539,32 @@ class InputHandler {
   }
 
   /**
+   * 购买到库存（不立即使用）
+   */
+  buyItemToInventory(item, i, usage, priceUse) {
+    const state = databus.state;
+    if (state.coins < priceUse) {
+      wx.showModal && wx.showModal({
+        title: '',
+        content: '金币不足：购买该道具需要 ' + priceUse + ' 金币，当前金币 ' + state.coins,
+        confirmText: '知道了',
+        showCancel: false
+      });
+      return;
+    }
+    wx.showModal({
+      title: '',
+      content: '消耗金币 ' + priceUse + ' 购买一个该道具？',
+      success: (res) => {
+        if (!res.confirm) return;
+        state.coins -= priceUse;
+        item.count = (item.count || 0) + 1;
+        state.powerBar[i] = item;
+      }
+    });
+  }
+
+  /**
    * 托盘点击进入拖拽或弹窗道具流程
    */
   handleTrayTouch(t) {
@@ -533,6 +597,13 @@ class InputHandler {
           if (startGx < 0) startGx = 0; if (startGy < 0) startGy = 0;
           if (startGx > 9 - piece.w) startGx = 9 - piece.w;
           if (startGy > 9 - piece.h) startGy = 9 - piece.h;
+          if (databus.state.relativeOffsetCells) {
+            startGx += databus.state.relativeOffsetCells.x || 0;
+            startGy += databus.state.relativeOffsetCells.y || 0;
+            if (startGx < 0) startGx = 0; if (startGy < 0) startGy = 0;
+            if (startGx > 9 - piece.w) startGx = 9 - piece.w;
+            if (startGy > 9 - piece.h) startGy = 9 - piece.h;
+          }
           state.drag = { x: t.clientX, y: t.clientY, cells: piece.cells.slice(), color: piece.color, gx: startGx, gy: startGy, index: i, w: piece.w, h: piece.h, refX: t.clientX, refY: t.clientY, startGx, startGy, mode: 'relative' };
         } else {
           state.drag = { x: t.clientX, y: t.clientY, cells: piece.cells.slice(), color: piece.color, gx: 0, gy: 0, index: i, w: piece.w, h: piece.h, mode: 'absolute' };

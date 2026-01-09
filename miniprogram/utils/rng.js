@@ -31,6 +31,7 @@ class RNGManager {
     this.currentSeed = null;
     this.levelId = 1;
     this.weights = DEFAULT_WEIGHTS;
+    this.rngCursor = 0;
   }
 
   // 初始化关卡RNG
@@ -41,6 +42,7 @@ class RNGManager {
     // Create PRNG from seed
     const seedFunc = xmur3(this.currentSeed.toString());
     this.rng = mulberry32(seedFunc());
+    this.rngCursor = 0;
     
     // 加载权重配置
     const levelCfg = LEVEL_CONFIG[levelId];
@@ -76,6 +78,7 @@ class RNGManager {
 
     // 生成 [0, totalWeight) 之间的随机数
     const r = this.rng() * totalWeight;
+    this.rngCursor++;
     
     // 权重判定
     let current = 0;
@@ -92,6 +95,21 @@ class RNGManager {
   // 获取当前种子（用于存档）
   getSeed() {
     return this.currentSeed;
+  }
+
+  // 获取RNG状态（用于撤回恢复）
+  getState() {
+    return { seed: this.currentSeed, levelId: this.levelId, cursor: this.rngCursor };
+  }
+
+  // 恢复RNG状态
+  restoreState(state) {
+    if (!state || !state.seed) return;
+    this.initLevel(state.levelId, state.seed);
+    for (let i = 0; i < (state.cursor || 0); i++) {
+      this.rng();
+    }
+    this.rngCursor = state.cursor || 0;
   }
 }
 
