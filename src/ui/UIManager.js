@@ -72,6 +72,14 @@ class UIManager {
     const ct5w = ctx.measureText(ct5).width;
     ctx.fillText(ct5, x + (btnW - ct5w)/2, y + 36);
     databus.state.menuButtons.push({ type:'history', x, y, w: btnW, h: btnH });
+    y += btnH + 20;
+    styles.drawThemedButton(ctx, x, y, btnW, btnH, 0.85);
+    ctx.fillStyle = '#fff';
+    ctx.font = '22px sans-serif';
+    const ct6 = '玩法试验（开发版）';
+    const ct6w = ctx.measureText(ct6).width;
+    ctx.fillText(ct6, x + (btnW - ct6w)/2, y + 36);
+    databus.state.menuButtons.push({ type:'experiment', x, y, w: btnW, h: btnH });
     
     // Settings button
     const gw = 44, gh = 44;

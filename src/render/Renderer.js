@@ -5,6 +5,7 @@
 const databus = require('../databus');
 const shared = require('../shared');
 const { accentColor, accentRGBA, parseColorToRGB } = require('../utils/theme');
+const { CRISIS_CFG, BOMB_CFG } = require('../config');
 const uiPower = require('../ui/powerBar');
 const overlays = require('../ui/overlays');
 const uiManager = require('../ui/UIManager');
@@ -105,8 +106,10 @@ class Renderer {
     this.drawUndo();
     this.drawDebug();
     this.drawBoard();
+    this.drawCrisis();
     this.drawDrag();
     this.drawClearing();
+    this.drawBombClearing();
     this.drawTray();
     
     if (databus.state.ui && databus.state.ui.showPower) { uiPower.drawPowerBar(); }
@@ -150,9 +153,50 @@ class Renderer {
         if (c.state === 'filled') {
           ctx.fillStyle = vars.cellFilled || '#00c853';
           ctx.fillRect(b.left + x * b.cell + 2, b.top + y * b.cell + 2, b.cell - 4, b.cell - 4);
+          if (c.symbol === 'bomb') {
+            ctx.strokeStyle = accentColor();
+            ctx.lineWidth = 3;
+            const cx = b.left + x * b.cell + b.cell / 2;
+            const cy = b.top + y * b.cell + b.cell / 2;
+            ctx.beginPath(); ctx.moveTo(cx - 8, cy - 8); ctx.lineTo(cx + 8, cy + 8); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(cx + 8, cy - 8); ctx.lineTo(cx - 8, cy + 8); ctx.stroke();
+          }
         }
       }
     }
+  }
+
+  drawCrisis() {
+    if (!databus.state.experimentalModeEnabled || !databus.state.crisisActive) return;
+    const ctx = this.ctx;
+    const b = databus.state.board;
+    ctx.save();
+    ctx.globalAlpha = 0.15;
+    ctx.fillStyle = (CRISIS_CFG && CRISIS_CFG.overlay) || 'rgba(255,0,0,0.6)';
+    ctx.fillRect(b.left, b.top, b.size, b.size);
+    ctx.restore();
+  }
+  
+  drawBombClearing() {
+    const cells = (databus.state.bombClearing && databus.state.bombClearing.cells) || [];
+    if (!cells.length) return;
+    const ctx = this.ctx;
+    const b = databus.state.board;
+    const color = (BOMB_CFG && BOMB_CFG.fx && BOMB_CFG.fx.color) || 'rgba(255,200,0,0.35)';
+    ctx.save();
+    for (const [x,y] of cells) {
+      const rx = b.left + x * b.cell + 2;
+      const ry = b.top + y * b.cell + 2;
+      ctx.fillStyle = color;
+      ctx.fillRect(rx, ry, b.cell - 4, b.cell - 4);
+      ctx.strokeStyle = '#ffa000';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(rx, ry + (b.cell - 4));
+      ctx.lineTo(rx + (b.cell - 4), ry);
+      ctx.stroke();
+    }
+    ctx.restore();
   }
 
   /**

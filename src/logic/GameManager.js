@@ -5,7 +5,7 @@
  */
 const databus = require('../databus');
 const gameLogic = require('./GameLogic');
-const { SCORE_CFG, CHALLENGES, COIN_CFG, ITEM_START_COUNT } = require('../config');
+const { SCORE_CFG, CHALLENGES, COIN_CFG, ITEM_START_COUNT, CRISIS_CFG, BOMB_CFG } = require('../config');
 const rngManager = require('../../miniprogram/utils/rng');
 
 class GameManager {
@@ -29,6 +29,53 @@ class GameManager {
     };
   }
 
+  computeCoverage() {
+    let filled = 0;
+    for (let y = 0; y < 9; y++) {
+      for (let x = 0; x < 9; x++) {
+        if (databus.state.grid[y][x].state === 'filled') filled++;
+      }
+    }
+    return filled / 81;
+  }
+
+  computeBombExplosions(res) {
+    const bombs = [];
+    const resSet = {};
+    for (const [x,y] of res.cells) resSet[`${x},${y}`] = true;
+    for (let y = 0; y < 9; y++) {
+      for (let x = 0; x < 9; x++) {
+        const c = databus.state.grid[y][x];
+        if (c.state === 'filled' && c.symbol === 'bomb') {
+          const neighborHit =
+            resSet[`${x},${y}`] ||
+            resSet[`${x-1},${y}`] || resSet[`${x+1},${y}`] || resSet[`${x},${y-1}`] || resSet[`${x},${y+1}`];
+          if (neighborHit) bombs.push([x,y]);
+        }
+      }
+    }
+    const extraCellsSet = {};
+    for (const [bx,by] of bombs) {
+      for (let x = 0; x < 9; x++) extraCellsSet[`${x},${by}`] = true;
+      for (let y = 0; y < 9; y++) extraCellsSet[`${bx},${y}`] = true;
+    }
+    for (const [x,y] of res.cells) extraCellsSet[`${x},${y}`] = true;
+    const extraCells = Object.keys(extraCellsSet).map(k => k.split(',').map(n=>Number(n)));
+    return { extraCells, bombCount: bombs.length };
+  }
+
+  spawnBomb() {
+    const filledCells = [];
+    for (let y = 0; y < 9; y++) for (let x = 0; x < 9; x++) {
+      const c = databus.state.grid[y][x];
+      if (c.state === 'filled' && c.symbol !== 'bomb') filledCells.push([x,y]);
+    }
+    if (filledCells.length === 0) return;
+    const idx = Math.floor(Math.random() * filledCells.length);
+    const [bx,by] = filledCells[idx];
+    const c = databus.state.grid[by][bx];
+    databus.state.grid[by][bx] = { state: c.state, anchored: c.anchored, symbol: 'bomb', box: c.box };
+  }
   /**
    * 初始化挑战关卡状态
    * @param {object} ch 关卡配置
@@ -98,6 +145,15 @@ class GameManager {
     const res = gameLogic.findClears();
     const areasThisStep = (res.rows || 0) + (res.cols || 0) + (res.boxes || 0);
     databus.state.lastPlacementHadClear = res.clearedCount > 0;
+    if (databus.state.experimentalModeEnabled) {
+      const cov = this.computeCoverage();
+      const th = (CRISIS_CFG && CRISIS_CFG.threshold) || databus.state.crisisThreshold || 0.8;
+      const dur = (CRISIS_CFG && CRISIS_CFG.duration) || 3;
+      if (cov >= th) {
+        databus.state.crisisActive = true;
+        databus.state.crisisTurnsLeft = dur;
+      }
+    }
     
     // 挑战模式：每步扣减剩余步数（若有限）
     if (databus.state.challengeEnabled) {
@@ -114,41 +170,59 @@ class GameManager {
       this.initClearFlash(res);
       const token = (databus.state.placeToken || 0) + 1;
       databus.state.placeToken = token;
+      let explosion = { extraCells: res.cells.slice(), bombCount: 0, bombOnly: [] };
+      if (databus.state.experimentalModeEnabled) {
+        explosion = this.computeBombExplosions(res);
+      }
+      const baseSet = {}; for (const [x,y] of res.cells) baseSet[`${x},${y}`]=true;
+      const bombOnly = [];
+      for (const [x,y] of explosion.extraCells) { if (!baseSet[`${x},${y}`]) bombOnly.push([x,y]); }
+      databus.state.bombClearing = { cells: bombOnly, ts: Date.now(), duration: (BOMB_CFG && BOMB_CFG.fx && BOMB_CFG.fx.duration) || 280 };
       
       setTimeout(() => {
         if (databus.state.placeToken !== token) return;
         const g2 = databus.state.grid.map(row => row.slice());
-        for (const [x, y] of res.cells) { const c = g2[y][x]; g2[y][x] = { state: 'empty', anchored: c.anchored, symbol: '', box: c.box }; }
+        for (const [x, y] of explosion.extraCells) { const c = g2[y][x]; g2[y][x] = { state: 'empty', anchored: c.anchored, symbol: '', box: c.box }; }
         databus.state.grid = g2;
         databus.state.clearing = { cells: [], ts: 0 };
+        databus.state.bombClearing = { cells: [], ts: 0, duration: 0 };
       }, 300);
       
       // 6) 单步连击累计与回合统计（areasThisStep 累加）
       const newChain = (databus.state.prevStepHadClear ? databus.state.comboChain : 0) + areasThisStep;
+      const extraChain = explosion.bombCount || 0;
+      const areasTotal = areasThisStep + extraChain;
+      const clearedExtraCount = (explosion.extraCells.length || res.clearedCount) - res.clearedCount;
+      const finalClearedCount = res.clearedCount + Math.max(0, clearedExtraCount);
       databus.state.comboChain = newChain;
       if (newChain > databus.state.maxChainSession) databus.state.maxChainSession = newChain;
       databus.state.prevStepHadClear = true;
-      databus.state.turnAreas += areasThisStep;
+      databus.state.turnAreas += areasTotal;
       databus.state.turnHadClear = true;
       
       // 7) 本步得分：清除格子数 * 类型倍率 + 落子基础分
       const comboTypes = (res.rows > 0 ? 1 : 0) + (res.cols > 0 ? 1 : 0) + (res.boxes > 0 ? 1 : 0);
-      const baseClear = SCORE_CFG.clearScorePerCell * res.clearedCount;
+      const baseClear = SCORE_CFG.clearScorePerCell * finalClearedCount;
       const typeMul = SCORE_CFG.comboTypeMultiplier[comboTypes] || 1;
       const add = baseClear * typeMul;
       
-      databus.state.score = databus.state.score + SCORE_CFG.placeBaseScore + add;
+      let gain = SCORE_CFG.placeBaseScore + add;
+      if (databus.state.experimentalModeEnabled && databus.state.crisisActive) {
+        const mul = (CRISIS_CFG && CRISIS_CFG.multiplier) || databus.state.crisisMultiplier || 3;
+        gain = gain * mul;
+      }
+      databus.state.score = databus.state.score + gain;
       
       // 8) 金币结算：按分数分桶与“步内连击”奖励增加金币
       const bucketNow = Math.floor(databus.state.score / COIN_CFG.scorePerCoin);
       if (bucketNow > databus.state.coinScoreBucket) { databus.state.coins += (bucketNow - databus.state.coinScoreBucket); databus.state.coinScoreBucket = bucketNow; }
-      if (areasThisStep >= 3) { databus.state.coins += ((COIN_CFG.stepComboCoinMap && COIN_CFG.stepComboCoinMap[areasThisStep]) || 0); }
+      if (areasTotal >= 3) { databus.state.coins += ((COIN_CFG.stepComboCoinMap && COIN_CFG.stepComboCoinMap[areasTotal]) || 0); }
       
       // 9) 挑战模式：仅在允许计数的零件下累计任务进度
       if (databus.state.challengeEnabled) {
         const allowed = !databus.state.countOnlyAllowed || (piece.id && databus.state.countOnlyAllowed.includes(piece.id));
         const tp = { ...databus.state.taskProgress };
-        if (allowed) { tp.score += SCORE_CFG.placeBaseScore + add; tp.areas += areasThisStep; }
+        if (allowed) { tp.score += gain; tp.areas += areasTotal; }
         databus.state.taskProgress = tp;
       }
       
@@ -162,7 +236,12 @@ class GameManager {
       // 无清除：重置本步连击链，按落子基础分计分，并处理分桶金币
       databus.state.comboChain = 0;
       databus.state.prevStepHadClear = false;
-      databus.state.score = databus.state.score + SCORE_CFG.placeBaseScore;
+      let gain2 = SCORE_CFG.placeBaseScore;
+      if (databus.state.experimentalModeEnabled && databus.state.crisisActive) {
+        const mul = (CRISIS_CFG && CRISIS_CFG.multiplier) || databus.state.crisisMultiplier || 3;
+        gain2 = gain2 * mul;
+      }
+      databus.state.score = databus.state.score + gain2;
       
       const bucketNow2 = Math.floor(databus.state.score / COIN_CFG.scorePerCoin);
       if (bucketNow2 > databus.state.coinScoreBucket) { databus.state.coins += (bucketNow2 - databus.state.coinScoreBucket); databus.state.coinScoreBucket = bucketNow2; }
@@ -171,7 +250,7 @@ class GameManager {
       if (databus.state.challengeEnabled) {
         const allowed = !databus.state.countOnlyAllowed || (piece.id && databus.state.countOnlyAllowed.includes(piece.id));
         const tp = { ...databus.state.taskProgress };
-        if (allowed) { tp.score += SCORE_CFG.placeBaseScore; }
+        if (allowed) { tp.score += gain2; }
         databus.state.taskProgress = tp;
       }
     }
@@ -266,6 +345,20 @@ class GameManager {
       if (!gameLogic.anyPlacementPossible()) {
         this.triggerFail();
       }
+    }
+    if (databus.state.experimentalModeEnabled && databus.state.crisisActive) {
+      databus.state.crisisTurnsLeft = Math.max(0, (databus.state.crisisTurnsLeft || 0) - 1);
+      if (databus.state.crisisTurnsLeft === 0) databus.state.crisisActive = false;
+    }
+    if (databus.state.experimentalModeEnabled) {
+      const everyN = (BOMB_CFG && BOMB_CFG.spawn && BOMB_CFG.spawn.everyNTurns) || 3;
+      const minC = (BOMB_CFG && BOMB_CFG.spawn && BOMB_CFG.spawn.minCombo) || 2;
+      const mod = (BOMB_CFG && BOMB_CFG.spawn && BOMB_CFG.spawn.scoreModulo) || 500;
+      const win = (BOMB_CFG && BOMB_CFG.spawn && BOMB_CFG.spawn.scoreWindow) || SCORE_CFG.placeBaseScore;
+      const condTurn = everyN > 0 ? ((databus.state.turnsUsed || 0) % everyN === 0) : false;
+      const condCombo = (databus.state.comboChain || 0) >= minC;
+      const condScore = ((databus.state.score || 0) % mod) < win;
+      if (condTurn || condCombo || condScore) this.spawnBomb();
     }
   }
 

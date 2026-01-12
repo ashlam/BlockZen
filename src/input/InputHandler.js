@@ -316,6 +316,35 @@ class InputHandler {
           state.scene = 'history';
           state.historyScroll = 0;
           return;
+        } else if (b.type === 'experiment') {
+          state.challengeEnabled = false;
+          state.powerModeEnabled = false;
+          state.experimentalModeEnabled = true;
+          rngManager.initLevel('classic');
+          gameLogic.initGrid();
+          gameLogic.nextPieces();
+          state.score = 0;
+          state.comboT = 0;
+          state.turnAreas = 0;
+          state.turnHadClear = false;
+          state.comboChain = 0;
+          state.coins = 0;
+          state.coinScoreBucket = 0;
+          state.crisisActive = false;
+          state.crisisTurnsLeft = 0;
+          const { CRISIS_CFG } = require('../config');
+          state.crisisThreshold = (CRISIS_CFG && CRISIS_CFG.threshold) || 0.8;
+          state.crisisMultiplier = (CRISIS_CFG && CRISIS_CFG.multiplier) || 3;
+          state.maxComboSession = 0;
+          state.maxChainSession = 0;
+          state.gameStartTs = Date.now();
+          state.turnsUsed = 0;
+          state.ui = { showBoard: true, showTray: true, showPower: false, showCancel: true };
+          state.scene = 'game';
+          if (!gameLogic.anyPlacementPossible()) {
+            gameManager.triggerFail();
+          }
+          return;
         }
       }
     }

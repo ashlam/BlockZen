@@ -93,7 +93,13 @@ class DataBus {
       undoPrev: null,
       undoButton: null,
       placeToken: 0,
-      relativeOffsetCells: { x: 0, y: -1 }
+      relativeOffsetCells: { x: 0, y: 0 },
+      experimentalModeEnabled: false,
+      crisisActive: false,
+      crisisTurnsLeft: 0,
+      crisisThreshold: 0.8,
+      crisisMultiplier: 3,
+      bombClearing: { cells: [], ts: 0, duration: 0 }
     };
 
     // Link state to shared for backward compatibility during refactor

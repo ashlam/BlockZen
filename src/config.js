@@ -13,6 +13,7 @@ const { PIECES_CFG } = require('../miniprogram/config/pieces');
 const { CHALLENGES } = require('../miniprogram/config/challenges');
 
 let COIN_CFG, ITEM_COST_CFG, ITEM_BUY_CFG, ITEM_START_COUNT;
+let CRISIS_CFG, BOMB_CFG;
 
 try {
   const cfg = require('../miniprogram/config/item_price.js');
@@ -32,6 +33,15 @@ try {
   ITEM_START_COUNT = { rotate: 3, dice: 3, redraw: 3 };
 }
 
+try {
+  const exp = require('../miniprogram/config/experimental.js');
+  CRISIS_CFG = exp.CRISIS_CFG;
+  BOMB_CFG = exp.BOMB_CFG;
+} catch (e) {
+  CRISIS_CFG = { threshold: 0.8, duration: 3, multiplier: 3, overlay: 'rgba(255,0,0,0.6)' };
+  BOMB_CFG = { spawn: { everyNTurns: 3, minCombo: 2, scoreModulo: 500, scoreWindow: 100 }, explosion: { pattern: 'cross' }, fx: { duration: 280, color: 'rgba(255,200,0,0.35)' } };
+}
+
 module.exports = {
   SCORE_CFG,
   THEMES,
@@ -40,5 +50,7 @@ module.exports = {
   COIN_CFG,
   ITEM_COST_CFG,
   ITEM_BUY_CFG,
-  ITEM_START_COUNT
+  ITEM_START_COUNT,
+  CRISIS_CFG,
+  BOMB_CFG
 };
