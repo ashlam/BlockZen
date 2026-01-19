@@ -14,6 +14,7 @@ const { CHALLENGES } = require('../miniprogram/config/challenges');
 
 let COIN_CFG, ITEM_COST_CFG, ITEM_BUY_CFG, ITEM_START_COUNT;
 let CRISIS_CFG, BOMB_CFG;
+let RESCUE_CFG;
 
 try {
   const cfg = require('../miniprogram/config/item_price.js');
@@ -42,6 +43,13 @@ try {
   BOMB_CFG = { spawn: { everyNTurns: 3, minCombo: 2, scoreModulo: 500, scoreWindow: 100 }, explosion: { pattern: 'cross' }, fx: { duration: 280, color: 'rgba(255,200,0,0.35)' } };
 }
 
+try {
+  const rescue = require('../miniprogram/config/rescue.js');
+  RESCUE_CFG = rescue.RESCUE_CFG;
+} catch (e) {
+  RESCUE_CFG = { maxRerollsPerSession: 10 };
+}
+
 module.exports = {
   SCORE_CFG,
   THEMES,
@@ -52,5 +60,6 @@ module.exports = {
   ITEM_BUY_CFG,
   ITEM_START_COUNT,
   CRISIS_CFG,
-  BOMB_CFG
+  BOMB_CFG,
+  RESCUE_CFG
 };

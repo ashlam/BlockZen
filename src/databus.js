@@ -63,6 +63,8 @@ class DataBus {
       clearFX: { parts: [], ts: 0, duration: 450 },
       clearBurst: { cx: 0, cy: 0, ts: 0, duration: 400 },
       clearFlash: { rows: [], cols: [], boxes: [], ts: 0, duration: 250 },
+      blinkClear: { cells: [], ts: 0, duration: 0 },
+      scoreHints: [],
       moveMode: 'relative',
       howtoScroll: 0,
       howtoTouchY: null,
@@ -88,6 +90,7 @@ class DataBus {
       ui: { showBoard: true, showTray: true, showPower: false, showCancel: true },
       coins: 0,
       coinScoreBucket: 0,
+      rescueRerollsLeft: 0,
       powerUsageCount: { rotate: 0, dice: 0, redraw: 0 },
       powerBuyBtn: null,
       undoPrev: null,
@@ -104,6 +107,40 @@ class DataBus {
 
     // Link state to shared for backward compatibility during refactor
     shared.state = this.state;
+    this.state.retro = {
+      scene: 'retro_menu',
+      running: false,
+      level: 1,
+      distance: 0,
+      targetDistance: 3000,
+      speed: 0,
+      maxSpeed: 220,
+      accel: 0.45,
+      lateralSpeed: 9,
+      fuel: 100,
+      hp: 100,
+      invulnTs: 0,
+      skidTs: 0,
+      rescueWindowMs: 500,
+      nearMiss: 0,
+      entities: [],
+      pickups: [],
+      scenery: [],
+      lastDragX: null,
+      lastDragTs: 0,
+      targetX: null,
+      oilUntil: 0,
+      dashOffset: 0,
+      lastSceneryTs: 0,
+      lastMarkerDist: 0,
+      track: { lanes: 5, width: 0, left: 0, top: 0, height: 0 },
+      controlZone: null,
+      ui: { startBtn: null, garageBtn: null, rankBtn: null },
+      result: { success: false, timeMs: 0, score: 0, distance: 0, nearMiss: 0 }
+      , starting: false
+      , startCountdownMs: 3000
+      , startCountdownTs: 0
+    };
   }
 }
 

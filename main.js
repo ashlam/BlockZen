@@ -69,6 +69,10 @@ function init() {
 }
 
 function tick() {
+  if (databus.state.scene === 'retro_game' && databus.state.retro && databus.state.retro.running) {
+    const retro = require('./src/minigames/retroRacer/retro_minigame_logic');
+    retro.updateRetro(16);
+  }
   renderer.render();
 }
 

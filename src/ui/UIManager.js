@@ -80,6 +80,14 @@ class UIManager {
     const ct6w = ctx.measureText(ct6).width;
     ctx.fillText(ct6, x + (btnW - ct6w)/2, y + 36);
     databus.state.menuButtons.push({ type:'experiment', x, y, w: btnW, h: btnH });
+    y += btnH + 20;
+    styles.drawThemedButton(ctx, x, y, btnW, btnH, 0.85);
+    ctx.fillStyle = '#fff';
+    ctx.font = '22px sans-serif';
+    const ct7 = '迷你游戏（白）';
+    const ct7w = ctx.measureText(ct7).width;
+    ctx.fillText(ct7, x + (btnW - ct7w)/2, y + 36);
+    databus.state.menuButtons.push({ type:'retro_enter', x, y, w: btnW, h: btnH });
     
     // Settings button
     const gw = 44, gh = 44;

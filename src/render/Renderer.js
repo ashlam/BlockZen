@@ -75,6 +75,33 @@ class Renderer {
       uiManager.drawMenu(ctx);
       return;
     }
+    if (databus.state.scene === 'minigame_list') {
+      const { list } = require('../minigames/index');
+      const sw = shared.sw, sh = shared.sh;
+      ctx.fillStyle = '#111'; ctx.fillRect(0, 0, sw, sh);
+      ctx.fillStyle = '#fff'; ctx.font = '26px sans-serif';
+      const title = '迷你游戏';
+      const tw = ctx.measureText(title).width;
+      ctx.fillText(title, (sw - tw) / 2, shared.safeTop + 52);
+      const btnW = 240, btnH = 64, x = (sw - btnW) / 2; let y = shared.safeTop + 100;
+      databus.state.minigameBtns = [];
+      for (const mg of list) {
+        ctx.fillStyle = 'rgba(255,255,255,0.9)';
+        ctx.fillRect(x, y, btnW, btnH);
+        ctx.fillStyle = '#000'; ctx.font = '20px sans-serif';
+        const tw2 = ctx.measureText(mg.name).width;
+        ctx.fillText(mg.name, x + (btnW - tw2)/2, y + 40);
+        databus.state.minigameBtns.push({ id: mg.id, x, y, w: btnW, h: btnH });
+        y += btnH + 16;
+      }
+      this.drawBack();
+      return;
+    }
+    if (databus.state.scene === 'retro_menu') {
+      require('../minigames/retroRacer/renderer').drawRetroMenu(ctx);
+      this.drawBack();
+      return;
+    }
     if (databus.state.scene === 'levelSelect') {
       uiManager.drawLevelSelect(ctx);
       this.drawBack();
@@ -101,15 +128,27 @@ class Renderer {
       return;
     }
     
+    if (databus.state.scene === 'retro_game') {
+      require('../minigames/retroRacer/renderer').drawRetroGame(ctx);
+      this.drawBack();
+      return;
+    }
+    if (databus.state.scene === 'retro_result') {
+      require('../minigames/retroRacer/renderer').drawRetroResult(ctx);
+      this.drawBack();
+      return;
+    }
     this.drawHUD();
     this.drawBack();
     this.drawUndo();
     this.drawDebug();
     this.drawBoard();
+    this.drawBlinkClear();
     this.drawCrisis();
     this.drawDrag();
     this.drawClearing();
     this.drawBombClearing();
+    this.drawScoreHints();
     this.drawTray();
     
     if (databus.state.ui && databus.state.ui.showPower) { uiPower.drawPowerBar(); }
@@ -125,6 +164,46 @@ class Renderer {
     this.drawClearFlash();
   }
 
+  drawBlinkClear() {
+    const bc = databus.state.blinkClear;
+    if (!bc || !bc.cells || bc.cells.length === 0) return;
+    const elapsed = Date.now() - bc.ts;
+    const prog = Math.min(1, elapsed / (bc.duration || 160));
+    const on = Math.floor(elapsed / 60) % 2 === 0;
+    const b = databus.state.board;
+    const ctx = this.ctx;
+    ctx.save();
+    ctx.globalAlpha = on ? 0.85 * (1 - prog) : 0.0;
+    ctx.fillStyle = '#ffffff';
+    for (const [x, y] of bc.cells) {
+      ctx.fillRect(b.left + x * b.cell + 2, b.top + y * b.cell + 2, b.cell - 4, b.cell - 4);
+    }
+    ctx.restore();
+    if (elapsed >= (bc.duration || 160)) { databus.state.blinkClear = { cells: [], ts: 0, duration: 0 }; }
+  }
+
+  drawScoreHints() {
+    const hints = databus.state.scoreHints || [];
+    if (!hints.length) return;
+    const ctx = this.ctx;
+    const now = Date.now();
+    const out = [];
+    for (const h of hints) {
+      const elapsed = now - h.ts;
+      if (elapsed < 0 || elapsed > (h.duration || 900)) continue;
+      const prog = Math.min(1, elapsed / (h.duration || 900));
+      const y = h.y - 16 * prog;
+      ctx.save();
+      ctx.globalAlpha = 1 - prog;
+      ctx.fillStyle = '#fff';
+      ctx.font = '16px sans-serif';
+      const tw = ctx.measureText(h.text).width;
+      ctx.fillText(h.text, h.x - tw / 2, y);
+      ctx.restore();
+      out.push(h);
+    }
+    databus.state.scoreHints = out;
+  }
   /**
    * 绘制棋盘与已填充格
    */

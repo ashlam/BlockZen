@@ -32,11 +32,24 @@ class InputHandler {
       return;
     }
 
-    // 2. Menu Scene
-    if (state.scene === 'menu') {
-      this.handleMenuTouch(t);
+    // Menu or Retro menu
+    if (state.scene === 'menu') { this.handleMenuTouch(t); return; }
+    if (state.scene === 'minigame_list') {
+      for (const btn of state.minigameBtns || []) {
+        if (t.clientX >= btn.x && t.clientX <= btn.x + btn.w && t.clientY >= btn.y && t.clientY <= btn.y + btn.h) {
+          if (btn.id === 'retro_racer') { state.scene = 'retro_menu'; return; }
+        }
+      }
+      if (state.backButton) {
+        const r = state.backButton;
+        if (t.clientX >= r.x && t.clientX <= r.x + r.w && t.clientY >= r.y && t.clientY <= r.y + r.h) {
+          state.scene = 'menu';
+          return;
+        }
+      }
       return;
     }
+    if (state.scene === 'retro_menu') { require('../minigames/retroRacer/input').handleMenuTouch(t); return; }
 
     // 3. Level Select
     if (state.scene === 'levelSelect') {
@@ -90,8 +103,14 @@ class InputHandler {
       if (this.handlePowerBarTouch(t)) return;
     }
 
-    // 8. Tray / Dragging (In Game)
-    this.handleTrayTouch(t);
+    // In-scene interactions
+    if (state.scene === 'game') {
+      this.handleTrayTouch(t);
+    } else if (state.scene === 'retro_game') {
+      require('../minigames/retroRacer/input').handleGameTouchStart(t);
+    } else if (state.scene === 'retro_result') {
+      require('../minigames/retroRacer/input').handleResultTouch(t);
+    }
   }
 
   /**
@@ -99,8 +118,12 @@ class InputHandler {
    */
   onTouchMove(e) {
     const state = databus.state;
-    if (!state.dragging) return;
     const t = e.changedTouches[0];
+    if (state.scene === 'retro_game') {
+      require('../minigames/retroRacer/input').handleGameTouchMove(t);
+      return;
+    }
+    if (!state.dragging) return;
     const b = state.board;
 
     if (state.scene === 'howto') {
@@ -274,6 +297,7 @@ class InputHandler {
           state.comboChain = 0;
           state.coins = 0;
           state.coinScoreBucket = 0;
+          try { const { RESCUE_CFG } = require('../config'); state.rescueRerollsLeft = (RESCUE_CFG && RESCUE_CFG.maxRerollsPerSession) || 10; } catch(e) { state.rescueRerollsLeft = 10; }
           state.maxComboSession = 0;
           state.maxChainSession = 0;
           state.gameStartTs = Date.now();
@@ -301,6 +325,7 @@ class InputHandler {
           state.maxChainSession = 0;
           state.gameStartTs = Date.now();
           state.turnsUsed = 0;
+          try { const { RESCUE_CFG } = require('../config'); state.rescueRerollsLeft = (RESCUE_CFG && RESCUE_CFG.maxRerollsPerSession) || 10; } catch(e) { state.rescueRerollsLeft = 10; }
           gameManager.resetPowerMode();
           state.ui = { showBoard: true, showTray: true, showPower: true, showCancel: true };
           state.scene = 'game';
@@ -335,6 +360,7 @@ class InputHandler {
           const { CRISIS_CFG } = require('../config');
           state.crisisThreshold = (CRISIS_CFG && CRISIS_CFG.threshold) || 0.8;
           state.crisisMultiplier = (CRISIS_CFG && CRISIS_CFG.multiplier) || 3;
+          try { const { RESCUE_CFG } = require('../config'); state.rescueRerollsLeft = (RESCUE_CFG && RESCUE_CFG.maxRerollsPerSession) || 10; } catch(e) { state.rescueRerollsLeft = 10; }
           state.maxComboSession = 0;
           state.maxChainSession = 0;
           state.gameStartTs = Date.now();
@@ -344,6 +370,9 @@ class InputHandler {
           if (!gameLogic.anyPlacementPossible()) {
             gameManager.triggerFail();
           }
+          return;
+        } else if (b.type === 'retro_enter') {
+          state.scene = 'minigame_list';
           return;
         }
       }
@@ -372,6 +401,7 @@ class InputHandler {
           gameLogic.nextPieces();
           state.coins = 0;
           state.coinScoreBucket = 0;
+          try { const { RESCUE_CFG } = require('../config'); state.rescueRerollsLeft = (RESCUE_CFG && RESCUE_CFG.maxRerollsPerSession) || 10; } catch(e) { state.rescueRerollsLeft = 10; }
           state.maxComboSession = 0;
           state.maxChainSession = 0;
           state.gameStartTs = Date.now();

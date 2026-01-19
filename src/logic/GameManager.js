@@ -115,6 +115,7 @@ class GameManager {
     databus.state.turnAreas = 0;
     databus.state.turnHadClear = false;
     databus.state.taskProgress = { score: 0, areas: 0, comboTotal: 0, maxCombo: 0 };
+    try { const { RESCUE_CFG } = require('../config'); databus.state.rescueRerollsLeft = (RESCUE_CFG && RESCUE_CFG.maxRerollsPerSession) || 10; } catch(e) { databus.state.rescueRerollsLeft = 10; }
   }
 
   /**
@@ -164,6 +165,7 @@ class GameManager {
       // 5) 触发清除特效：碎片、圆环、闪烁，并在 300ms 后真正把格子清空
       const grid = databus.state.grid.map(row => row.slice());
       databus.state.clearing = { cells: res.cells.slice(), ts: Date.now() };
+      databus.state.blinkClear = { cells: res.cells.slice(), ts: Date.now(), duration: 160 };
       
       this.initClearFX(res.cells);
       this.initClearBurst(res.cells);
@@ -228,6 +230,20 @@ class GameManager {
       
       // 10) 清除音效；如果托盘已空则立即补新三枚；多段连击时显示弹框特效
       if (databus.state.audioClear) { try { databus.state.audioClear.stop(); } catch (e) {} try { databus.state.audioClear.play(); } catch (e) {} }
+      const b2 = databus.state.board;
+      const hints = [];
+      for (const y of res.rowsFull || []) {
+        hints.push({ x: b2.left + b2.size / 2, y: b2.top + y * b2.cell + b2.cell / 2, text: '+' + add, ts: Date.now(), duration: 900 });
+      }
+      for (const x of res.colsFull || []) {
+        hints.push({ x: b2.left + x * b2.cell + b2.cell / 2, y: b2.top + b2.size / 2, text: '+' + add, ts: Date.now(), duration: 900 });
+      }
+      for (const [bx, by] of res.boxesFull || []) {
+        const cx = b2.left + (bx * 3 + 1.5) * b2.cell;
+        const cy = b2.top + (by * 3 + 1.5) * b2.cell;
+        hints.push({ x: cx, y: cy, text: '+' + add, ts: Date.now(), duration: 900 });
+      }
+      databus.state.scoreHints = hints;
       
       databus.state.grid = grid;
       if (databus.state.pieces.length === 0) { gameLogic.nextPieces(); }
@@ -445,6 +461,7 @@ class GameManager {
           databus.state.turnAreas = 0;
           databus.state.turnHadClear = false;
           databus.state.comboChain = 0;
+          try { const { RESCUE_CFG } = require('../config'); databus.state.rescueRerollsLeft = (RESCUE_CFG && RESCUE_CFG.maxRerollsPerSession) || 10; } catch(e) { databus.state.rescueRerollsLeft = 10; }
           
           if(databus.state.powerModeEnabled){
              this.resetPowerMode();

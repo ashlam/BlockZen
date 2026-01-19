@@ -4,6 +4,7 @@
  * 不含分数/金币结算与回合控制。
  */
 const databus = require('../databus');
+const { RESCUE_CFG } = require('../config');
 const rngManager = require('../../miniprogram/utils/rng');
 
 class GameLogic {
@@ -44,12 +45,37 @@ class GameLogic {
    * 生成新的三枚零件到托盘
    */
   nextPieces() {
-    const pick = () => rngManager.nextPiece();
-    const pieces = [pick(), pick(), pick()].map(cfg => {
+    const canPlaceWith = (pcs) => {
+      for (const piece of pcs) {
+        for (let gy = 0; gy <= 9 - piece.h; gy++) {
+          for (let gx = 0; gx <= 9 - piece.w; gx++) {
+            let ok = true;
+            for (const [dx, dy] of piece.cells) {
+              if (databus.state.grid[gy + dy][gx + dx].state !== 'empty') { ok = false; break; }
+            }
+            if (ok) return true;
+          }
+        }
+      }
+      return false;
+    };
+    const pickOne = () => {
+      const cfg = rngManager.nextPiece();
       const { cells, w, h } = this.toCells(cfg.shape);
-      const power = '';
-      return { id: cfg.id, name: cfg.name, color: cfg.color, cells, w, h, power };
-    });
+      return { id: cfg.id, name: cfg.name, color: cfg.color, cells, w, h, power: '' };
+    };
+    const makeThree = () => [pickOne(), pickOne(), pickOne()];
+    let pieces = makeThree();
+    if (!canPlaceWith(pieces)) {
+      let left = typeof databus.state.rescueRerollsLeft === 'number' ? databus.state.rescueRerollsLeft : 0;
+      const maxLoop = Math.min(left, (RESCUE_CFG && RESCUE_CFG.maxRerollsPerSession) || 10);
+      for (let i = 0; i < maxLoop; i++) {
+        const cand = makeThree();
+        left = Math.max(0, left - 1);
+        if (canPlaceWith(cand)) { pieces = cand; databus.state.rescueRerollsLeft = left; break; }
+        databus.state.rescueRerollsLeft = left;
+      }
+    }
     databus.state.pieces = pieces;
   }
 
